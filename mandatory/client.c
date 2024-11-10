@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:23 by teando            #+#    #+#             */
-/*   Updated: 2024/11/11 05:58:23 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/11 06:04:52 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ static pid_t	parse_input(const int ac, const char *av[])
 		ft_dprintf(STDERR_FILENO, "Usage: %s [SERVER PID] [MESSAGE]\n", av[0]);
 		exit(EXIT_FAILURE);
 	}
-	if (*av[1] == "" || !ft_strfunc(*av[1], ft_isdigit))
+	if (*av[1] == 0 || !ft_strfunc(av[1], ft_isdigit))
 	{
 		ft_dprintf(STDERR_FILENO, "Error: PID must be a number!\n");
 		exit(EXIT_FAILURE);
@@ -85,7 +85,7 @@ static void	response_handler(int sig, siginfo_t *info, void *context)
 		exit(EXIT_FAILURE);
 	}
 	if (sig == SIGUSR1)
-		send_str(info->si_pid, );
+		send_str(info->si_pid, NULL);
 	if (sig == SIGUSR2)
 	{
 		ft_dprintf(STDOUT_FILENO, "Server >> \"The message came through\"\n");
@@ -93,12 +93,12 @@ static void	response_handler(int sig, siginfo_t *info, void *context)
 	}
 }
 
-int	main(int ac, char *av[])
+int	main(int ac, char **av)
 {
 	struct sigaction	sig_set;
 	pid_t				process_id;
 
-	process_id = parse_input(ac, av);
+	process_id = parse_input(ac, (const char **)av);
 	sig_set.sa_flags = SA_SIGINFO;
 	sig_set.sa_sigaction = response_handler;
 	sigemptyset(&sig_set.sa_mask);
@@ -112,7 +112,7 @@ int	main(int ac, char *av[])
 		ft_dprintf(STDERR_FILENO, "Error: SIGNAL FAILURE\n");
 		exit(EXIT_FAILURE);
 	}
-	ft_send_str(process_id, av[2]);
+	send_str(process_id, av[2]);
 	while (1)
 		pause();
 	return (0);
