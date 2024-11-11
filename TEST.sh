@@ -128,14 +128,14 @@ echo
 # 全テストケースの実行
 for test_case in "${test_cases[@]}"; do
     echo "テストケース: $test_case"
-    start_time=$(date +%s.%N)
+    start_time=$(cat /proc/uptime | awk '{print $1}')
     
     # テストメッセージの送信
     ./client $pid "$test_case"
     result=$?
     
-    end_time=$(date +%s.%N)
-    execution_time=$(measure_time $start_time $end_time)
+    end_time=$(cat /proc/uptime | awk '{print $1}')
+    execution_time=$(echo "$end_time - $start_time" | bc)
     
     if [ $result -eq 0 ]; then
         echo "✅ 成功 (実行時間: $execution_time)"
@@ -145,6 +145,7 @@ for test_case in "${test_cases[@]}"; do
         ((failed++))
     fi
     echo "-------------------"
+	sleep 0.01
 done
 
 # テスト結果のサマリー
