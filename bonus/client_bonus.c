@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/12 01:33:00 by teando            #+#    #+#             */
-/*   Updated: 2024/11/12 03:07:46 by teando           ###   ########.fr       */
+/*   Created: 2024/11/09 03:06:23 by teando            #+#    #+#             */
+/*   Updated: 2024/11/12 05:53:45 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ static int	send_bit(pid_t pid, unsigned char c)
 				return (-1);
 		}
 		bit++;
-		pause();
+		usleep(1000);
 	}
 	bit = 0;
 	return (0);
@@ -65,7 +65,6 @@ static int	send_bit(pid_t pid, unsigned char c)
 
 static void	send_str(pid_t pid, const char *str)
 {
-	ft_printf("PID: %d, str: %s\n", pid, str);
 	if (!str)
 		return ;
 	while (*str)
@@ -79,17 +78,11 @@ static void	send_str(pid_t pid, const char *str)
 	send_bit(pid, '\0');
 }
 
-static void	response_handler(int sig, siginfo_t *info, void *context)
+static void	response_handler(int sig)
 {
-	(void)context;
-	if (info->si_pid == 0)
-	{
-		ft_dprintf(STDERR_FILENO, "Error: Received signal from invalid PID.\n");
-		exit(EXIT_FAILURE);
-	}
 	if (sig == SIGUSR1)
 	{
-		send_str(info->si_pid, NULL);
+		return ;
 	}
 	if (sig == SIGUSR2)
 	{
@@ -100,19 +93,15 @@ static void	response_handler(int sig, siginfo_t *info, void *context)
 
 int	main(int ac, char **av)
 {
-	struct sigaction	sig_set;
-	pid_t				process_id;
+	pid_t	process_id;
 
 	process_id = parse_input(ac, (const char **)av);
-	sig_set.sa_flags = SA_SIGINFO;
-	sig_set.sa_sigaction = response_handler;
-	sigemptyset(&sig_set.sa_mask);
-	if (sigaction(SIGUSR1, &sig_set, NULL) == -1)
+	if (signal(SIGUSR1, response_handler) == SIG_ERR)
 	{
 		ft_dprintf(STDERR_FILENO, "Error: Failed to set up SIGUSR1 handler.\n");
 		exit(EXIT_FAILURE);
 	}
-	if (sigaction(SIGUSR2, &sig_set, NULL) == -1)
+	if (signal(SIGUSR2, response_handler) == SIG_ERR)
 	{
 		ft_dprintf(STDERR_FILENO, "Error: Failed to set up SIGUSR2 handler.\n");
 		exit(EXIT_FAILURE);
