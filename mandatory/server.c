@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:19 by teando            #+#    #+#             */
-/*   Updated: 2024/11/12 05:41:29 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/12 06:50:20 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,8 @@ typedef enum e_errors
 	SUCCESS,
 	ERROR_IN_SIGACTION,
 	ERROR_IN_PID,
-	ERROR_IN_KILL,
+	ERROR_IN_KILL1,
+	ERROR_IN_KILL2,
 	ERROR_IN_WRITE
 }			t_errors;
 
@@ -55,9 +56,14 @@ static void	error_handler(int type)
 		ft_dprintf(STDERR_FILENO, "Error: Invalid PID\n");
 		exit(EXIT_FAILURE);
 	}
-	else if (type == ERROR_IN_KILL)
+	else if (type == ERROR_IN_KILL1)
 	{
-		ft_dprintf(STDERR_FILENO, "Error: Failed to send Signal.\n");
+		ft_dprintf(STDERR_FILENO, "Error: Failed to send Signal. SIGSER1\n");
+		exit(EXIT_FAILURE);
+	}
+	else if (type == ERROR_IN_KILL2)
+	{
+		ft_dprintf(STDERR_FILENO, "Error: Failed to send Signal. SIGSER2\n");
 		exit(EXIT_FAILURE);
 	}
 	else if (type == ERROR_IN_WRITE)
@@ -72,38 +78,36 @@ static void	send_response(pid_t pid, int sigtype)
 	if (sigtype == 1)
 	{
 		if (kill(pid, SIGUSR1) == -1)
-			error_handler(ERROR_IN_KILL);
+			error_handler(ERROR_IN_KILL1);
 	}
 	else if (sigtype == 2)
 	{
 		if (kill(pid, SIGUSR2) == -1)
-			error_handler(ERROR_IN_KILL);
+			error_handler(ERROR_IN_KILL2);
 	}
 }
 
 static void	signal_handler(int signum, siginfo_t *info, void *context)
 {
 	static unsigned char	tmp;
-	static int				bit = 1;
+	static int				bit = 0;
 
 	(void)context;
 	if (info->si_pid == 0)
 		error_handler(ERROR_IN_PID);
 	if (signum == SIGUSR2)
-		tmp += bit;
-	bit *= 2;
-	if (bit == 256)
+		tmp |= (1 << bit);
+	bit++;
+	if (bit == 8)
 	{
-		// ft_printf(" (bit: %d) ", bit);
-		// ft_printf("( tmp: %c) ", tmp);
 		if (tmp == 0)
 			send_response(info->si_pid, 2);
-		if (tmp != 0)
-			if (write(STDOUT_FILENO, &tmp, 1) == -1)
-				error_handler(ERROR_IN_WRITE);
+		else if (write(STDOUT_FILENO, &tmp, 1) == -1)
+			error_handler(ERROR_IN_WRITE);
 		tmp = 0;
-		bit = 1;
+		bit = 0;
 	}
+	usleep(100);
 	send_response(info->si_pid, 1);
 }
 

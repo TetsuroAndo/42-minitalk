@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:23 by teando            #+#    #+#             */
-/*   Updated: 2024/11/12 05:49:20 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/12 06:50:48 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,8 @@ static int	send_bit(pid_t pid, unsigned char c)
 				return (-1);
 		}
 		bit++;
-		usleep(1000);
+		pause();
+		usleep(100);
 	}
 	bit = 0;
 	return (0);
@@ -65,7 +66,6 @@ static int	send_bit(pid_t pid, unsigned char c)
 
 static void	send_str(pid_t pid, const char *str)
 {
-	// ft_printf("PID: %d, str: %s\n", pid, str);
 	if (!str)
 		return ;
 	while (*str)
