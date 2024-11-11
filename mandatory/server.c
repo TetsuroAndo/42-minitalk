@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:19 by teando            #+#    #+#             */
-/*   Updated: 2024/11/11 22:23:18 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/12 00:00:42 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,29 +84,29 @@ static void	send_response(pid_t pid, int sigtype)
 static void	signal_handler(int signum, siginfo_t *info, void *context)
 {
 	static unsigned char	tmp;
-	static int				bit = 0;
+	static int				bit = 1;
 
 	(void)context;
 	if (info->si_pid == 0)
 		error_handler(ERROR_IN_PID);
-	if (signum == SIGUSR1)
-		tmp += 0;
 	if (signum == SIGUSR2)
 		tmp += bit;
 	bit *= 2;
 	if (bit == 256)
 	{
-		if (tmp != 0)
+		bit = 1;
+		if (tmp == 0)
+			send_response(info->si_pid, 2);
+		else
 		{
 			if (write(STDOUT_FILENO, &tmp, 1) == -1)
 				error_handler(ERROR_IN_WRITE);
+			send_response(info->si_pid, 1);
 		}
-		else
-			send_response(info->si_pid, 2);
 		tmp = 0;
-		bit = 1;
 	}
-	send_response(info->si_pid, 1);
+	else
+		send_response(info->si_pid, 1);
 }
 
 int	main(void)
@@ -123,6 +123,5 @@ int	main(void)
 		error_handler(ERROR_IN_SIGACTION);
 	while (1)
 		pause();
-	ft_printf("exiting...\n");
 	return (0);
 }

@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:23 by teando            #+#    #+#             */
-/*   Updated: 2024/11/11 22:20:32 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/12 00:44:28 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,6 @@ static pid_t	parse_input(const int ac, const char *av[])
 		exit(EXIT_FAILURE);
 	}
 	ft_printf("Send message to PID: %d\n", process_id);
-	ft_printf("Sending...\n");
 	return (process_id);
 }
 
@@ -47,25 +46,20 @@ static int	send_bit(pid_t pid, unsigned char c)
 
 	while (bit < 8)
 	{
-		if ((c & (1 << bit)) != 0)
+		if (((c >> bit) & 1) == 0)
 		{
 			if (kill(pid, SIGUSR1) == -1)
-			{
-				ft_dprintf(STDERR_FILENO, "Error: Failed to send message.\n");
-				exit(EXIT_FAILURE);
-			}
+				return (-1);
 		}
 		else
 		{
 			if (kill(pid, SIGUSR2) == -1)
-			{
-				ft_dprintf(STDERR_FILENO, "Error: Failed to send message.\n");
-				exit(EXIT_FAILURE);
-			}
+				return (-1);
 		}
-		usleep(100);
 		bit++;
+		pause();
 	}
+	bit = 0;
 	return (0);
 }
 
@@ -93,10 +87,12 @@ static void	response_handler(int sig, siginfo_t *info, void *context)
 		exit(EXIT_FAILURE);
 	}
 	if (sig == SIGUSR1)
+	{
 		send_str(info->si_pid, NULL);
+	}
 	if (sig == SIGUSR2)
 	{
-		ft_dprintf(STDOUT_FILENO, "Received SIGUSR2 signal. Exiting...\n");
+		ft_printf("Sending Completed. Exiting...\n");
 		exit(EXIT_SUCCESS);
 	}
 }
@@ -123,6 +119,5 @@ int	main(int ac, char **av)
 	send_str(process_id, av[2]);
 	while (1)
 		pause();
-	ft_printf("exiting...\n");
 	return (0);
 }
