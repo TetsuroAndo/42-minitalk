@@ -5,37 +5,118 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/10 14:03:38 by teando            #+#    #+#             */
-/*   Updated: 2024/11/10 14:10:25 by teando           ###   ########.fr       */
+/*   Created: 2024/11/12 01:33:00 by teando            #+#    #+#             */
+/*   Updated: 2024/11/12 03:07:46 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "libft.h"
 #include <signal.h>
-#include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-void	display_start_up(void)
+static pid_t	parse_input(const int ac, const char *av[])
 {
-	int	process_id;
+	pid_t	process_id;
 
-	process_id = getpid();
-	ft_printf(" ■■   ■■  ■■■■  ■■   ■■  ■■■■  ■■■■■■      ■■  ■■       ■■  ■■\n");
-	ft_printf(" ■■■ ■■■   ■■   ■■   ■■   ■■     ■■       ■■■  ■■       ■■ ■■\n");
-	ft_printf("       ■              ■                     ■\n");
-	ft_printf(" ■■ ■ ■■   ■■   ■■ ■ ■■   ■■     ■■      ■■■■  ■■       ■■■■\n");
-	ft_printf(" ■■   ■■   ■■   ■■  ■■■   ■■     ■■     ■■■■■  ■■       ■■ ■■\n");
-	ft_printf(" ■■   ■■   ■■   ■■   ■■   ■■     ■■    ■■  ■■  ■■       ■■  ■■\n");
-	ft_printf(" ■■   ■■  ■■■■  ■■   ■■  ■■■■    ■■   ■■   ■■  ■■■■■■■  ■■   ■■\n");
-	ft_printf("************************************************** SERVER ******\n");
-	ft_printf("PID: %d\n", process_id);
-	ft_printf("\nWaiting for a message...\n");
+	if (ac != 3)
+	{
+		ft_dprintf(STDERR_FILENO, "Usage: %s [SERVER PID] [MESSAGE]\n", av[0]);
+		exit(EXIT_FAILURE);
+	}
+	if (*av[1] == 0 || !ft_strfunc(av[1], ft_isdigit))
+	{
+		ft_dprintf(STDERR_FILENO, "Error: PID must be a number!\n");
+		exit(EXIT_FAILURE);
+	}
+	process_id = ft_atoi(av[1]);
+	if (process_id <= 100 || process_id >= 9999999)
+	{
+		ft_dprintf(STDERR_FILENO, "Error: Invalid PID.\n");
+		exit(EXIT_FAILURE);
+	}
+	ft_printf("Send message to PID: %d\n", process_id);
+	return (process_id);
 }
 
-int	main(void)
+static int	send_bit(pid_t pid, unsigned char c)
 {
-	display_start_up();
-	write(1, "あ", 1);
+	static int	bit = 0;
+
+	while (bit < 8)
+	{
+		if (((c >> bit) & 1) == 0)
+		{
+			if (kill(pid, SIGUSR1) == -1)
+				return (-1);
+		}
+		else
+		{
+			if (kill(pid, SIGUSR2) == -1)
+				return (-1);
+		}
+		bit++;
+		pause();
+	}
+	bit = 0;
+	return (0);
+}
+
+static void	send_str(pid_t pid, const char *str)
+{
+	ft_printf("PID: %d, str: %s\n", pid, str);
+	if (!str)
+		return ;
+	while (*str)
+	{
+		if (send_bit(pid, (unsigned char)*str++) == -1)
+		{
+			ft_dprintf(STDERR_FILENO, "Error: Failed to send message.\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+	send_bit(pid, '\0');
+}
+
+static void	response_handler(int sig, siginfo_t *info, void *context)
+{
+	(void)context;
+	if (info->si_pid == 0)
+	{
+		ft_dprintf(STDERR_FILENO, "Error: Received signal from invalid PID.\n");
+		exit(EXIT_FAILURE);
+	}
+	if (sig == SIGUSR1)
+	{
+		send_str(info->si_pid, NULL);
+	}
+	if (sig == SIGUSR2)
+	{
+		ft_printf("Sending Completed. Exiting...\n");
+		exit(EXIT_SUCCESS);
+	}
+}
+
+int	main(int ac, char **av)
+{
+	struct sigaction	sig_set;
+	pid_t				process_id;
+
+	process_id = parse_input(ac, (const char **)av);
+	sig_set.sa_flags = SA_SIGINFO;
+	sig_set.sa_sigaction = response_handler;
+	sigemptyset(&sig_set.sa_mask);
+	if (sigaction(SIGUSR1, &sig_set, NULL) == -1)
+	{
+		ft_dprintf(STDERR_FILENO, "Error: Failed to set up SIGUSR1 handler.\n");
+		exit(EXIT_FAILURE);
+	}
+	if (sigaction(SIGUSR2, &sig_set, NULL) == -1)
+	{
+		ft_dprintf(STDERR_FILENO, "Error: Failed to set up SIGUSR2 handler.\n");
+		exit(EXIT_FAILURE);
+	}
+	send_str(process_id, av[2]);
 	return (0);
 }

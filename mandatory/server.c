@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:19 by teando            #+#    #+#             */
-/*   Updated: 2024/11/12 00:00:42 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/12 04:01:07 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,19 +94,17 @@ static void	signal_handler(int signum, siginfo_t *info, void *context)
 	bit *= 2;
 	if (bit == 256)
 	{
-		bit = 1;
+		// ft_printf(" (bit: %d) ", bit);
+		// ft_printf("( tmp: %c) ", tmp);
 		if (tmp == 0)
 			send_response(info->si_pid, 2);
-		else
-		{
+		if (tmp != 0)
 			if (write(STDOUT_FILENO, &tmp, 1) == -1)
 				error_handler(ERROR_IN_WRITE);
-			send_response(info->si_pid, 1);
-		}
 		tmp = 0;
+		bit = 1;
 	}
-	else
-		send_response(info->si_pid, 1);
+	send_response(info->si_pid, 1);
 }
 
 int	main(void)
