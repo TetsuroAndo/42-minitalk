@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:19 by teando            #+#    #+#             */
-/*   Updated: 2024/11/11 04:41:13 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/11 22:23:18 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,12 +32,12 @@ static void	display_start_up(void)
 	process_id = getpid();
 	ft_printf("■■   ■■ ■■■■ ■■   ■■ ■■■■ ■■■■■■     ■■  ■■      ■■  ■■\n");
 	ft_printf("■■■ ■■■  ■■  ■■   ■■  ■■    ■■      ■■■  ■■      ■■ ■■\n");
-	ft_printf("      ■            ■                  ■          ■\n");
+	ft_printf("      ■            ■                  ■\n");
 	ft_printf("■■ ■ ■■  ■■  ■■ ■ ■■  ■■    ■■     ■■■■  ■■      ■■■■\n");
 	ft_printf("■■   ■■  ■■  ■■  ■■■  ■■    ■■    ■■■■■  ■■      ■■ ■■\n");
 	ft_printf("■■   ■■  ■■  ■■   ■■  ■■    ■■   ■■  ■■  ■■      ■■  ■■\n");
 	ft_printf("■■   ■■ ■■■■ ■■   ■■ ■■■■   ■■  ■■   ■■  ■■■■■■■ ■■   ■■\n");
-	ft_printf("******************************************* SERVER ******\n");
+	ft_printf("=========================================== SERVER =====\n");
 	ft_printf("PID: %d\n", process_id);
 	ft_printf("\n");
 	ft_printf("Waiting for signal...\n");
@@ -57,7 +57,7 @@ static void	error_handler(int type)
 	}
 	else if (type == ERROR_IN_KILL)
 	{
-		ft_dprintf(STDERR_FILENO, "Error: FAILURE KILL CLIENT\n");
+		ft_dprintf(STDERR_FILENO, "Error: Failed to send Signal.\n");
 		exit(EXIT_FAILURE);
 	}
 	else if (type == ERROR_IN_WRITE)
@@ -67,30 +67,46 @@ static void	error_handler(int type)
 	}
 }
 
+static void	send_response(pid_t pid, int sigtype)
+{
+	if (sigtype == 1)
+	{
+		if (kill(pid, SIGUSR1) == -1)
+			error_handler(ERROR_IN_KILL);
+	}
+	else if (sigtype == 2)
+	{
+		if (kill(pid, SIGUSR2) == -1)
+			error_handler(ERROR_IN_KILL);
+	}
+}
+
 static void	signal_handler(int signum, siginfo_t *info, void *context)
 {
 	static unsigned char	tmp;
-	static int				bit;
+	static int				bit = 0;
 
 	(void)context;
 	if (info->si_pid == 0)
 		error_handler(ERROR_IN_PID);
 	if (signum == SIGUSR1)
+		tmp += 0;
+	if (signum == SIGUSR2)
 		tmp += bit;
-	bit <<= 1;
+	bit *= 2;
 	if (bit == 256)
 	{
 		if (tmp != 0)
+		{
 			if (write(STDOUT_FILENO, &tmp, 1) == -1)
 				error_handler(ERROR_IN_WRITE);
-		if (tmp == 0)
-			if (kill(info->si_pid, SIGUSR2) == -1)
-				error_handler(ERROR_IN_KILL);
+		}
+		else
+			send_response(info->si_pid, 2);
 		tmp = 0;
-		bit = 0;
+		bit = 1;
 	}
-	if (kill(info->si_pid, SIGUSR1) == -1)
-		error_handler(ERROR_IN_KILL);
+	send_response(info->si_pid, 1);
 }
 
 int	main(void)
