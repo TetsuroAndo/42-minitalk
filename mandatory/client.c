@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:23 by teando            #+#    #+#             */
-/*   Updated: 2024/11/12 07:56:27 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/12 09:03:00 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,6 @@ static pid_t	parse_input(const int ac, const char *av[])
 		ft_dprintf(STDERR_FILENO, "Error: Invalid PID.\n");
 		exit(EXIT_FAILURE);
 	}
-	ft_printf("Send message to PID: %d\n", process_id);
 	return (process_id);
 }
 
