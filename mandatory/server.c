@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:19 by teando            #+#    #+#             */
-/*   Updated: 2024/11/12 09:22:35 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/12 09:41:23 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,7 +93,7 @@ static void	signal_handler(int signum, siginfo_t *info, void *context)
 		tmp = 0;
 		bit = 0;
 	}
-	usleep(700);
+	usleep(800);
 	send_response(process_id, 1);
 }
 
