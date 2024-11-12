@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:19 by teando            #+#    #+#             */
-/*   Updated: 2024/11/12 09:41:23 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/12 09:44:46 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@ static void	error_handler(int type)
 	}
 	else if (type == ERROR_IN_KILL)
 	{
-		ft_dprintf(STDERR_FILENO, "Error: Failed to send Signal. SIGSER\n");
+		ft_dprintf(STDERR_FILENO, "Error: Failed to send Signal.\n");
 		exit(EXIT_FAILURE);
 	}
 	else if (type == ERROR_IN_WRITE)

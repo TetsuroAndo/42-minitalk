@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/09 03:06:19 by teando            #+#    #+#             */
-/*   Updated: 2024/11/12 08:34:42 by teando           ###   ########.fr       */
+/*   Updated: 2024/11/12 09:44:41 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,6 @@ typedef enum e_errors
 {
 	SUCCESS,
 	ERROR_IN_SIGACTION,
-	ERROR_IN_PID,
 	ERROR_IN_KILL,
 	ERROR_IN_WRITE
 }			t_errors;
@@ -50,11 +49,6 @@ static void	error_handler(int type)
 		ft_dprintf(STDERR_FILENO, "Error: SIGACTION FAILURE\n");
 		exit(EXIT_FAILURE);
 	}
-	else if (type == ERROR_IN_PID)
-	{
-		ft_dprintf(STDERR_FILENO, "Error: Invalid PID\n");
-		exit(EXIT_FAILURE);
-	}
 	else if (type == ERROR_IN_KILL)
 	{
 		ft_dprintf(STDERR_FILENO, "Error: Failed to send Signal.\n");
@@ -70,10 +64,7 @@ static void	error_handler(int type)
 static void	send_response(pid_t pid, int sigtype)
 {
 	if (sigtype == 1)
-	{
-		if (kill(pid, SIGUSR1) == -1)
-			error_handler(ERROR_IN_KILL);
-	}
+		kill(pid, SIGUSR1);
 	else if (sigtype == 2)
 	{
 		if (kill(pid, SIGUSR2) == -1)
@@ -84,25 +75,26 @@ static void	send_response(pid_t pid, int sigtype)
 static void	signal_handler(int signum, siginfo_t *info, void *context)
 {
 	static unsigned char	tmp;
-	static int				bit = 1;
+	static int				bit;
+	static pid_t			process_id;
 
 	(void)context;
-	if (info->si_pid == 0)
-		error_handler(ERROR_IN_PID);
+	if (info->si_pid != 0)
+		process_id = info->si_pid;
 	if (signum == SIGUSR2)
-		tmp += bit;
-	bit *= 2;
-	if (bit == 256)
+		tmp |= (1 << bit);
+	bit++;
+	if (bit == 8)
 	{
 		if (tmp == 0)
-			send_response(info->si_pid, 2);
-		if (tmp != 0)
-			if (write(STDOUT_FILENO, &tmp, 1) == -1)
-				error_handler(ERROR_IN_WRITE);
+			send_response(process_id, 2);
+		else if (write(STDOUT_FILENO, &tmp, 1) == -1)
+			error_handler(ERROR_IN_WRITE);
 		tmp = 0;
-		bit = 1;
+		bit = 0;
 	}
-	send_response(info->si_pid, 1);
+	usleep(800);
+	send_response(process_id, 1);
 }
 
 int	main(void)
